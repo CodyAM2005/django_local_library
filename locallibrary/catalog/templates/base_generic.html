@@ -28,6 +28,8 @@
               <li>User: {{ user.get_username }}</li>
 
               <li><a href="{% url 'my-borrowed' %}">My Borrowed</a></li>
+              <li><a href="{% url 'quiz' %}">Take the quiz</a></li>
+              <li><a href="{% url 'quiz-history' %}">Quiz scores</a></li>
 
               <li>
                 <form id="logout-form" method="post" action="{% url 'admin:logout' %}">

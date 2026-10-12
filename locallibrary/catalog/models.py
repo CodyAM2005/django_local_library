@@ -157,3 +157,15 @@ class Author(models.Model):
     def __str__(self):
         """String for representing the Model object."""
         return f'{self.last_name}, {self.first_name}'
+
+
+class QuizScore(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    score = models.PositiveSmallIntegerField()
+    date_taken = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_taken']
+
+    def __str__(self):
+        return f'{self.user}: {self.score}/5'

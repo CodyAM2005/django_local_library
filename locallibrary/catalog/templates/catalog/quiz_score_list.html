@@ -1,0 +1,20 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Your quiz scores</h1>
+  {% if messages %}
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+  {% if scores %}
+    <ul>
+      {% for score in scores %}
+        <li>{{ score.date_taken }}: {{ score.score }} out of 5</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>You have not taken the quiz yet.</p>
+  {% endif %}
+  <p><a href="{% url 'quiz' %}">Take the quiz</a></p>
+{% endblock %}

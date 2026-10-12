@@ -57,6 +57,7 @@ class AuthorDetailView(generic.DetailView):
     model = Author
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 
 class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
     """Generic class-based view listing books on loan to current user."""
@@ -78,7 +79,8 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from catalog.forms import RenewBookForm
+from catalog.forms import LibraryQuizForm, RenewBookForm
+from catalog.models import QuizScore
 
 @login_required
 @permission_required('catalog.can_mark_returned', raise_exception=True)
@@ -112,3 +114,27 @@ def renew_book_librarian(request, pk):
     }
 
     return render(request, 'catalog/book_renew_librarian.html', context)
+
+
+@login_required
+def quiz(request):
+    if request.method == 'POST':
+        form = LibraryQuizForm(request.POST)
+        if form.is_valid():
+            score = form.score()
+            QuizScore.objects.create(user=request.user, score=score)
+            messages.success(request, f'You scored {score} out of 5.')
+            return HttpResponseRedirect(reverse('quiz-history'))
+    else:
+        form = LibraryQuizForm()
+
+    return render(request, 'catalog/quiz.html', {'form': form})
+
+
+class QuizScoreListView(LoginRequiredMixin, generic.ListView):
+    model = QuizScore
+    template_name = 'catalog/quiz_score_list.html'
+    context_object_name = 'scores'
+
+    def get_queryset(self):
+        return QuizScore.objects.filter(user=self.request.user)

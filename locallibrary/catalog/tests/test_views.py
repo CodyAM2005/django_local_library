@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from catalog.models import Author
+from catalog.models import Author, QuizScore
 
 
 class AuthorListViewTest(TestCase):
@@ -168,3 +168,58 @@ class LoanedBookInstancesByUserListViewTest(TestCase):
             else:
                 self.assertTrue(last_date <= book.due_back)
                 last_date = book.due_back
+
+
+class QuizViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='quizuser', password='testpassword')
+
+    def quiz_answers(self):
+        return {
+            'q1': 'author',
+            'q2': 'bookinstance',
+            'q3': 'isbn',
+            'q4': 'available',
+            'q5': 'many_to_many',
+        }
+
+    def test_quiz_and_score_history_require_login(self):
+        self.assertRedirects(
+            self.client.get(reverse('quiz')),
+            f'/accounts/login/?next={reverse("quiz")}',
+        )
+        self.assertRedirects(
+            self.client.get(reverse('quiz-history')),
+            f'/accounts/login/?next={reverse("quiz-history")}',
+        )
+
+    def test_submission_saves_score_and_shows_result(self):
+        self.client.force_login(self.user)
+        answers = self.quiz_answers()
+        answers['q4'] = 'on_loan'
+
+        response = self.client.post(reverse('quiz'), answers)
+
+        self.assertRedirects(response, reverse('quiz-history'), fetch_redirect_response=False)
+        self.assertEqual(QuizScore.objects.get(user=self.user).score, 4)
+        response = self.client.get(reverse('quiz-history'))
+        self.assertContains(response, 'You scored 4 out of 5.')
+        self.assertContains(response, '4 out of 5')
+
+    def test_score_history_only_shows_current_users_attempts(self):
+        other_user = User.objects.create_user(username='otheruser', password='testpassword')
+        QuizScore.objects.create(user=self.user, score=3)
+        QuizScore.objects.create(user=other_user, score=5)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('quiz-history'))
+
+        self.assertEqual(list(response.context['scores']), list(QuizScore.objects.filter(user=self.user)))
+
+    def test_invalid_submission_does_not_save_score(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('quiz'), {'q1': 'author'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(QuizScore.objects.count(), 0)
