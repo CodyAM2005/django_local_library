@@ -3,5 +3,5 @@ Visit the deployed webapp at [codyam.pythonanywhere.com](codyam.pythonanywhere.c
 
 You may login with the following test credentials:
 
-Username: TestUser
-Password: TestPassword
+Username: TestUser  
+Password: TestPassword  
